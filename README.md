@@ -33,7 +33,9 @@ CSV Files -> Airflow ETL -> Clickhouse raw таблицы -> Data quality -> mon
 
 - data/ - исходные CSV файлы
 - docs/ - различные документация по проекту
-- notebooks/ - исследование и profiling данных
+- notebooks/ - исследование данных
+- sql/ - sql скрипты
+  - sql/init/ — инициализация бд и raw таблиц в clickhouse
 
 ## Аномалии
 

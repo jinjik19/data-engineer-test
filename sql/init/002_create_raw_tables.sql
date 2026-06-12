@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS raw.players
     id UInt32,
     registration_date Date,
     registration_type LowCardinality(String),
-    LowCardinality LowCardinality(String),
+    country LowCardinality(String),
     loaded_at DateTime('UTC') DEFAULT now()
 )
 ENGINE = MergeTree
