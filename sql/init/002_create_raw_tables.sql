@@ -37,18 +37,19 @@ CREATE TABLE IF NOT EXISTS raw.games_map
 ENGINE = ReplacingMergeTree(loaded_at)
 ORDER BY id;
 
-CREATE TABLE IF NOT EXISTS raw.games_map
+CREATE TABLE IF NOT EXISTS raw.currency_rates
 (
-    id UInt32,
-    game_name String,
-    provider_id UInt32,
+    date Date,
+    currency LowCardinality(String),
+    rate_to_usd Decimal(10, 4),
 
     source_file String,
     load_id UUID,
     loaded_at DateTime64(3, 'UTC')
 )
 ENGINE = ReplacingMergeTree(loaded_at)
-ORDER BY id;
+PARTITION BY toYYYYMM(date)
+ORDER BY (date, currency);
 
 CREATE TABLE IF NOT EXISTS raw.deposits
 (

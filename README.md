@@ -29,6 +29,8 @@
 
 CSV Files -> Airflow ETL -> Clickhouse raw таблицы -> Data quality -> monthly_summary -> Metabase dashboard
 
+raw — это исторический слой приема сырых данных, поэтому повторные загрузки физически добавляют строки;
+
 ## Структура проекта
 
 - config/ - настройки Airflow
