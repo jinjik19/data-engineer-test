@@ -1,21 +1,27 @@
-CREATE TABLE IF NOT EXISTS raw.players 
+CREATE TABLE IF NOT EXISTS raw.players
 (
     id UInt32,
     registration_date Date,
     registration_type LowCardinality(String),
     country LowCardinality(String),
-    loaded_at DateTime('UTC') DEFAULT now()
+
+    source_file String,
+    load_id UUID,
+    loaded_at DateTime64(3, 'UTC')
 )
-ENGINE = MergeTree
+ENGINE = ReplacingMergeTree(loaded_at)
 ORDER BY id;
 
 CREATE TABLE IF NOT EXISTS raw.providers_map
 (
     id UInt32,
     provider_name String,
-    loaded_at DateTime('UTC') DEFAULT now()
+
+    source_file String,
+    load_id UUID,
+    loaded_at DateTime64(3, 'UTC')
 )
-ENGINE MergeTree
+ENGINE = ReplacingMergeTree(loaded_at)
 ORDER BY id;
 
 CREATE TABLE IF NOT EXISTS raw.games_map
@@ -23,20 +29,26 @@ CREATE TABLE IF NOT EXISTS raw.games_map
     id UInt32,
     game_name String,
     provider_id UInt32,
-    loaded_at DateTime('UTC') DEFAULT now()
+
+    source_file String,
+    load_id UUID,
+    loaded_at DateTime64(3, 'UTC')
 )
-ENGINE = MergeTree
+ENGINE = ReplacingMergeTree(loaded_at)
 ORDER BY id;
 
-CREATE TABLE IF NOT EXISTS raw.currency_rates
+CREATE TABLE IF NOT EXISTS raw.games_map
 (
-    date Date,
-    currency LowCardinality(String),
-    rate_to_usd Decimal(10, 4),
-    loaded_at DateTime('UTC') DEFAULT now()
+    id UInt32,
+    game_name String,
+    provider_id UInt32,
+
+    source_file String,
+    load_id UUID,
+    loaded_at DateTime64(3, 'UTC')
 )
-ENGINE = MergeTree
-ORDER BY (currency, date);
+ENGINE = ReplacingMergeTree(loaded_at)
+ORDER BY id;
 
 CREATE TABLE IF NOT EXISTS raw.deposits
 (
@@ -46,11 +58,14 @@ CREATE TABLE IF NOT EXISTS raw.deposits
     provider_id UInt32,
     amount Decimal(10, 2),
     currency LowCardinality(String),
-    loaded_at DateTime('UTC') DEFAULT now()
+
+    source_file String,
+    load_id UUID,
+    loaded_at DateTime64(3, 'UTC')
 )
-ENGINE = MergeTree
+ENGINE = ReplacingMergeTree(loaded_at)
 PARTITION BY toYYYYMM(deposit_date)
-ORDER BY (deposit_date, player_id, id);
+ORDER BY id;
 
 CREATE TABLE IF NOT EXISTS raw.withdrawals
 (
@@ -60,11 +75,14 @@ CREATE TABLE IF NOT EXISTS raw.withdrawals
     provider_id UInt32,
     amount Decimal(10, 2),
     currency LowCardinality(String),
-    loaded_at DateTime('UTC') DEFAULT now()
+
+    source_file String,
+    load_id UUID,
+    loaded_at DateTime64(3, 'UTC')
 )
-ENGINE = MergeTree
+ENGINE = ReplacingMergeTree(loaded_at)
 PARTITION BY toYYYYMM(withdrawal_date)
-ORDER BY (withdrawal_date, player_id, id);
+ORDER BY id;
 
 CREATE TABLE IF NOT EXISTS raw.games
 (
@@ -75,8 +93,23 @@ CREATE TABLE IF NOT EXISTS raw.games
     currency LowCardinality(String),
     provider_id UInt32,
     game_id UInt32,
-    loaded_at DateTime('UTC') DEFAULT now()
+
+    source_file String,
+    load_id UUID,
+    loaded_at DateTime64(3, 'UTC')
 )
-ENGINE = MergeTree
+ENGINE = ReplacingMergeTree(loaded_at)
 PARTITION BY toYYYYMM(game_date)
-ORDER BY (game_date, player_id, game_id, id);
+ORDER BY id;
+
+CREATE TABLE IF NOT EXISTS raw.load_batches
+(
+    entity LowCardinality(String),
+    data_month Date,
+    load_id UUID,
+    source_file String,
+    loaded_at DateTime64(3, 'UTC'),
+    status LowCardinality(String)
+)
+ENGINE = ReplacingMergeTree(loaded_at)
+ORDER BY (entity, data_month, load_id);
