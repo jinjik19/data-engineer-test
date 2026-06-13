@@ -1,6 +1,7 @@
 -r requirements.txt
 
 apache-airflow==3.2.2
-ipykernel>=7.3.0
-jupyterlab>=4.5.8
-pandas>=3.0.3
+ipykernel==7.3.0
+jupyterlab==4.5.8
+pandas==3.0.3
+pytest==9.0.3
