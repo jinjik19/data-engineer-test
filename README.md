@@ -20,7 +20,7 @@
 
 - Clickhouse
 - Airflow
-- Python
+- Python3.13
 - Metabase
 - Docker Compose
 - Pandas/Jupyter
@@ -31,9 +31,14 @@ CSV Files -> Airflow ETL -> Clickhouse raw таблицы -> Data quality -> mon
 
 ## Структура проекта
 
+- config/ - настройки Airflow
+- dags/ — DAG файлы Airflow
 - data/ - исходные CSV файлы
+- docker/ - докерфайлы
+  - docker/airflow - докерфайлы airflow
 - docs/ - различные документация по проекту
 - notebooks/ - исследование данных
+- plugins/ -
 - sql/ - sql скрипты
   - sql/init/ — инициализация бд и raw таблиц в clickhouse
 
@@ -42,3 +47,121 @@ CSV Files -> Airflow ETL -> Clickhouse raw таблицы -> Data quality -> mon
 - Есть несовпадения провайдеров в games и games map, причем совпадений очень мало. По хорошему надо бы уточнить а что считать источником истины
 
 ## Запуск проекта
+
+Для запуска нужны:
+
+- Docker
+- Docker Compose
+
+### Переменные окружения
+
+Создать локальный `.env`:
+
+```bash
+cp .env.example .env
+```
+
+### Команды запуска
+
+1. Собрать Docker-образы:
+
+```bash
+make build
+# или
+docker compose build
+```
+
+2. Запустить сервисы:
+
+```bash
+make up
+# или
+docker compose up -d
+```
+
+3. Посмотреть логи
+
+```bash
+make logs
+# или
+docker compose logs -f
+```
+
+4. Остановить сервисы
+
+```bash
+make down
+# или
+docker compose down
+```
+
+5. Остановить сервисы и удалить volumes
+
+```bash
+make reset
+# или
+docker compose down -v
+```
+
+### Доступы
+
+Airflow UI - http://localhost:8080
+логин и пароль из .env файла
+(AIRFLOW_ADMIN_USERNAME/AIRFLOW_ADMIN_PASSWORD)
+
+Clickhouse HTTP - доступен на порту 8123
+логин и пароль из .env файла
+(CLICKHOUSE_USER/CLICKHOUSE_PASSWORD)
+
+### Локальная разработка
+
+Версия Python зафиксированна в `.python-version`. Используется версия 3.13
+
+#### Linux
+
+1. Создание виртуального окружения
+
+```bash
+python3 -m venv .venv
+```
+
+2. Запуск виртуального окружения
+
+```bash
+source .venv\bin\activate
+```
+
+3. Установка пакетов
+
+```bash
+pip install -r requirements-dev.txt
+```
+
+#### Windows
+
+1. Создание виртуального окружения
+
+```bash
+python -m venv .venv
+```
+
+2. Запуск виртуального окружения
+   CMD
+
+```cmd
+.venv\Scripts\activate.bat
+```
+
+or
+
+POWERSHELL
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+3. Установка пакетов
+
+```bash
+pip install -r requirements-dev.txt
+```

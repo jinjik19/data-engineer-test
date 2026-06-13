@@ -2,7 +2,7 @@ services:
   clickhouse:
     image: clickhouse/clickhouse-server:26.3
     container_name: clickhouse_dwh
-    restart: unless-stopped
+    restart: always
     ports:
       - "8123:8123"
       - "9000:9000"
@@ -15,13 +15,148 @@ services:
       - ./sql/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test:
+        ["CMD-SHELL", "wget --spider -q http://127.0.0.1:8123/ping || exit 1"]
+      interval: 10s
+      start_period: 5s
+      retries: 5
+
+  x-airflow-common: &airflow-common
+    image: ${AIRFLOW_IMAGE_NAME}
+    build:
+      context: .
+      dockerfile: docker/airflow/Dockerfile
+    environment: &airflow-common-env
+      AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+      AIRFLOW__CORE__EXECUTOR: ${AIRFLOW__CORE__EXECUTOR}
+      AIRFLOW__CORE__LOAD_EXAMPLES: ${AIRFLOW__CORE__LOAD_EXAMPLES}
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: ${AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION}
+      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: "http://airflow-apiserver:8080/execution/"
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_POSTGRES_USER}:${AIRFLOW_POSTGRES_PASSWORD}@airflow-postgres:5432/${AIRFLOW_POSTGRES_DB}
+      AIRFLOW_CONN_CLICKHOUSE_DEFAULT: http://${CLICKHOUSE_USER}:${CLICKHOUSE_PASSWORD}@clickhouse:8123/default
+    user: "${AIRFLOW_UID}:0"
+    volumes:
+      - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
+      - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
+      - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
+      - ${AIRFLOW_PROJ_DIR:-.}/src:/opt/airflow/src
+      - ${AIRFLOW_PROJ_DIR:-.}/sql:/opt/airflow/sql:ro
+      - ${AIRFLOW_PROJ_DIR:-.}/data:/opt/airflow/data:ro
+
+  airflow-postgres:
+    image: postgres:16
+    container_name: airflow_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${AIRFLOW_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${AIRFLOW_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${AIRFLOW_POSTGRES_DB}
+    volumes:
+      - airflow_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
         [
           "CMD-SHELL",
-          "clickhouse-client --user=$${CLICKHOUSE_USER} --password=$${CLICKHOUSE_PASSWORD} --query='SELECT 1",
+          "pg_isready -U ${AIRFLOW_POSTGRES_USER} -d ${AIRFLOW_POSTGRES_DB}",
         ]
-      interval: 5s
-      timeout: 3s
-      retries: 10
+      interval: 10s
+      retries: 5
+      start_period: 5s
+
+  airflow-init:
+    <<: *airflow-common
+    user: "0:0"
+    container_name: airflow_init
+    depends_on:
+      airflow-postgres:
+        condition: service_healthy
+    environment:
+      <<: *airflow-common-env
+      _AIRFLOW_DB_MIGRATE: "true"
+      _AIRFLOW_WWW_USER_CREATE: "true"
+      _AIRFLOW_WWW_USER_USERNAME: ${AIRFLOW_ADMIN_USERNAME:-airflow}
+      _AIRFLOW_WWW_USER_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD:-airflow}
+      _AIRFLOW_WWW_USER_EMAIL: ${AIRFLOW_ADMIN_EMAIL:-airflow@example.com}
+      _PIP_ADDITIONAL_REQUIREMENTS: ""
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        set -e
+
+        if [[ -z "$${AIRFLOW_UID}" ]]; then
+          echo "WARNING: AIRFLOW_UID is not set. Using current user id."
+          export AIRFLOW_UID=$$(id -u)
+        fi
+
+        echo "Creating Airflow directories..."
+        mkdir -p /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins /opt/airflow/config
+
+        echo "Airflow version:"
+        /entrypoint airflow version
+
+        echo "Initializing Airflow config..."
+        /entrypoint airflow config list >/dev/null
+
+        echo "Fixing ownership..."
+        chown -R "$${AIRFLOW_UID}:0" /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins /opt/airflow/config
+
+        echo "Running Airflow entrypoint initialization..."
+        /entrypoint airflow version
+
+        echo "Airflow initialization finished."
+
+  airflow-api-server:
+    <<: *airflow-common
+    container_name: airflow_api_server
+    restart: always
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    ports:
+      - "8080:8080"
+    command: api-server
+    healthcheck:
+      test:
+        ["CMD", "curl", "--fail", "http://localhost:8080/api/v2/monitor/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: airflow_scheduler
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    command: scheduler
+
+  airflow-dag-processor:
+    <<: *airflow-common
+    container_name: airflow_dag_processor
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'airflow jobs check --job-type DagProcessorJob --hostname "$${HOSTNAME}"',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    command: dag-processor
 
 volumes:
   clickhouse_data:
+  airflow_postgres_data:
