@@ -44,3 +44,16 @@ tempCodeRunnerFile.py
 
 # Ruff stuff:
 .ruff_cache/
+
+# Airflow local runtime
+logs/
+airflow.db
+airflow.cfg
+webserver_config.py
+config/airflow.cfg
+config/webserver_config.py
+
+# Docker / temp / logs
+*.log
+tmp/
+temp/
