@@ -13,6 +13,7 @@ class SourceEntity:
     staging_table: str
     required_columns: tuple[str, ...]
     date_column: str | None = None
+    date_columns: tuple[str, ...] = ()
     raw_database: str = "raw"
     staging_database: str = "staging"
 

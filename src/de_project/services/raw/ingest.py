@@ -43,6 +43,13 @@ class RawIngestService:
         self.validate_required_columns(entity, dataframe)
 
         prepared_df = dataframe.loc[:, list(entity.required_columns)].copy()
+
+        for column in entity.date_columns:
+            prepared_df[column] = pd.to_datetime(
+                prepared_df[column],
+                errors="raise",
+            ).dt.date
+
         prepared_df["source_file"] = source_file
         prepared_df["load_id"] = str(load_id)
         prepared_df["loaded_at"] = loaded_at or datetime.now(timezone.utc)

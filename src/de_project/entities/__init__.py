@@ -16,7 +16,8 @@ ENTITIES: dict[str, SourceEntity] = {
             "registration_type",
             "country",
         ),
-        date_column=None,
+        date_column="registration_date",
+        date_columns=("registration_date",),
     ),
     "providers_map": SourceEntity(
         name="providers_map",
@@ -55,6 +56,7 @@ ENTITIES: dict[str, SourceEntity] = {
             "rate_to_usd",
         ),
         date_column="date",
+        date_columns=("date",),
     ),
     "deposits": SourceEntity(
         name="deposits",
@@ -71,6 +73,7 @@ ENTITIES: dict[str, SourceEntity] = {
             "currency",
         ),
         date_column="deposit_date",
+        date_columns=("deposit_date",),
     ),
     "withdrawals": SourceEntity(
         name="withdrawals",
@@ -87,6 +90,7 @@ ENTITIES: dict[str, SourceEntity] = {
             "currency",
         ),
         date_column="withdrawal_date",
+        date_columns=("withdrawal_date",),
     ),
     "games": SourceEntity(
         name="games",
@@ -104,6 +108,7 @@ ENTITIES: dict[str, SourceEntity] = {
             "game_id",
         ),
         date_column="game_date",
+        date_columns=("game_date",),
     ),
 }
 
