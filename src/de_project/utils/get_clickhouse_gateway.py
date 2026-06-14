@@ -1,5 +1,5 @@
-from airflow.sdk.bases.hook import BaseHook
 import clickhouse_connect
+from airflow.sdk.bases.hook import BaseHook
 
 from de_project.dwh.clickhouse import ClickHouseGateway
 from de_project.settings import Settings, settings
