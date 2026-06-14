@@ -1,11 +1,9 @@
 from datetime import datetime
-from uuid import uuid4
 
-from airflow.decorators import dag, task
+from airflow.decorators import dag
 
-from de_project.utils.get_clickhouse_gateway import get_clickhouse_gateway
-from de_project.services.raw.pipeline import RawPipelineService
-from de_project.settings import settings
+from tasks.staging import build_staging_group
+from tasks.raw import check_clickhouse_connection, load_raw_entities
 
 
 @dag(
@@ -15,44 +13,14 @@ from de_project.settings import settings
     schedule="@monthly",
     catchup=False,
     tags=["de-project", "clickhouse", "etl", "monthly_summary"],
+    max_active_runs=1,
 )
-def raw_ingest_dag() -> None:
-    @task
-    def check_clickhouse_connection() -> None:
-        gateway = get_clickhouse_gateway()
-        result = gateway.query_rows("SELECT 1")
-
-        if not result or result[0][0] != 1:
-            raise RuntimeError(f"Неожиданный ответ ClickHouse: {result}")
-
-    @task
-    def load_raw_entities() -> list[dict]:
-        load_id = str(uuid4())
-
-        gateway = get_clickhouse_gateway()
-        pipeline = RawPipelineService(warehouse=gateway)
-
-        results = pipeline.load_all_entities_to_raw(
-            data_dir=settings.data_dir,
-            load_id=uuid4() if not load_id else __import__("uuid").UUID(load_id),
-        )
-
-        return [
-            {
-                "entity_name": result.entity_name,
-                "raw_table": result.raw_table,
-                "source_file": result.source_file,
-                "rows_loaded": result.rows_loaded,
-                "loaded_months": [month.isoformat() for month in result.loaded_months],
-                "load_id": str(result.load_id),
-            }
-            for result in results
-        ]
-
+def monthly_summary_etl() -> None:
     clickhouse_ready = check_clickhouse_connection()
     raw_results = load_raw_entities()
+    staging_tables = build_staging_group()
 
-    clickhouse_ready >> raw_results
+    clickhouse_ready >> raw_results >> staging_tables
 
 
-raw_ingest_dag()
+monthly_summary_etl()
