@@ -6,7 +6,7 @@ from typing import Any
 from airflow.decorators import task
 
 from de_project.entities.staging_table_config import StagingTableConfig
-from de_project.services.staging.sql_runner import create_sql_runner
+from de_project.services.sql_runner import create_sql_runner
 
 
 @dataclass(frozen=True)

@@ -2,7 +2,7 @@ from pathlib import Path
 
 from de_project.settings import settings
 from de_project.dwh.ports import DataWarehouseGateway
-from de_project.services.staging.exceptions import (
+from de_project.services.exceptions import (
     DataQualityCheckError,
     SqlFileNotFoundError,
 )
