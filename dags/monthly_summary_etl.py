@@ -2,6 +2,7 @@ from datetime import datetime
 
 from airflow.decorators import dag
 
+from tasks.mart import build_mart_group
 from tasks.staging import build_staging_group
 from tasks.raw import check_clickhouse_connection, load_raw_entities
 
@@ -18,9 +19,10 @@ from tasks.raw import check_clickhouse_connection, load_raw_entities
 def monthly_summary_etl() -> None:
     clickhouse_ready = check_clickhouse_connection()
     raw_results = load_raw_entities()
-    staging_tables = build_staging_group()
+    staging = build_staging_group()
+    mart = build_mart_group()
 
-    clickhouse_ready >> raw_results >> staging_tables
+    clickhouse_ready >> raw_results >> staging >> mart
 
 
 monthly_summary_etl()
