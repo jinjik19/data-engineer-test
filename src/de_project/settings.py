@@ -6,6 +6,7 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class Settings:
     data_dir: Path
+    sql_dir: Path
     clickhouse_conn_id: str
     raw_database: str
     staging_database: str
@@ -15,6 +16,7 @@ class Settings:
 def get_settings() -> Settings:
     return Settings(
         data_dir=Path(os.getenv("DATA_DIR", "/opt/airflow/data")),
+        sql_dir=Path(os.getenv("DE_PROJECT_SQL_DIR", "/opt/airflow/sql")),
         clickhouse_conn_id=os.getenv(
             "CLICKHOUSE_CONN_ID",
             "clickhouse_default",
