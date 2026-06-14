@@ -51,3 +51,52 @@ CURRENCY_RATES_CONFIG = StagingTableConfig(
         "checks/staging/currency_rates/usd_rate_equals_one.sql",
     ),
 )
+
+DEPOSITS_CONFIG = StagingTableConfig(
+    entity_name="deposits",
+    table_name="staging.deposits",
+    build_sql_file="staging/build_deposits.sql",
+    check_sql_files=(
+        "checks/staging/deposits/not_empty.sql",
+        "checks/staging/deposits/no_duplicate_ids.sql",
+        "checks/staging/deposits/valid_amount.sql",
+        "checks/staging/deposits/not_empty_currency.sql",
+        "checks/staging/deposits/valid_deposit_date.sql",
+        "checks/staging/deposits/player_exists.sql",
+        "checks/staging/deposits/provider_exists.sql",
+        "checks/staging/deposits/currency_rate_exists.sql",
+    ),
+)
+
+WITHDRAWALS_CONFIG = StagingTableConfig(
+    entity_name="withdrawals",
+    table_name="staging.withdrawals",
+    build_sql_file="staging/build_withdrawals.sql",
+    check_sql_files=(
+        "checks/staging/withdrawals/not_empty.sql",
+        "checks/staging/withdrawals/no_duplicate_ids.sql",
+        "checks/staging/withdrawals/valid_amount.sql",
+        "checks/staging/withdrawals/not_empty_currency.sql",
+        "checks/staging/withdrawals/valid_withdrawal_date.sql",
+        "checks/staging/withdrawals/player_exists.sql",
+        "checks/staging/withdrawals/provider_exists.sql",
+        "checks/staging/withdrawals/currency_rate_exists.sql",
+    ),
+)
+
+GAMES_CONFIG = StagingTableConfig(
+    entity_name="games",
+    table_name="staging.games",
+    build_sql_file="staging/build_games.sql",
+    check_sql_files=(
+        "checks/staging/games/not_empty.sql",
+        "checks/staging/games/no_duplicate_ids.sql",
+        "checks/staging/games/valid_amount.sql",
+        "checks/staging/games/not_empty_currency.sql",
+        "checks/staging/games/valid_game_date.sql",
+        "checks/staging/games/player_exists.sql",
+        "checks/staging/games/provider_exists.sql",
+        "checks/staging/games/game_exists.sql",
+        "checks/staging/games/currency_rate_exists.sql",
+    ),
+)
