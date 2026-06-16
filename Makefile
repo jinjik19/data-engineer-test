@@ -34,6 +34,7 @@ logs:
 lint:
 	ruff check .
 	ruff format . --check
+	mypy
 
 .PHONY: format
 format:
