@@ -1,10 +1,9 @@
 from datetime import datetime
 
 from airflow.decorators import dag
-
 from tasks.mart import build_mart_group
-from tasks.staging import build_staging_group
 from tasks.raw import check_clickhouse_connection, load_raw_entities
+from tasks.staging import build_staging_group
 
 
 @dag(

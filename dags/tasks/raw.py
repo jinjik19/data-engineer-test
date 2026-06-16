@@ -3,8 +3,8 @@ from uuid import uuid4
 
 from airflow.decorators import task
 
-from de_project.settings import settings
 from de_project.services.raw.pipeline import RawPipelineService
+from de_project.settings import settings
 from de_project.utils.get_clickhouse_gateway import get_clickhouse_gateway
 
 

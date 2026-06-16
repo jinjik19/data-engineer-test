@@ -2,7 +2,6 @@ from de_project.entities.raw_entity_load_result import RawLoadResultEntity
 from de_project.entities.source import SourceEntity
 from de_project.entities.types import EntityType
 
-
 ENTITIES: dict[str, SourceEntity] = {
     "players": SourceEntity(
         name="players",

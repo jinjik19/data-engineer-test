@@ -1,5 +1,4 @@
 from airflow.decorators import task_group
-
 from tasks.staging.currency_rate import build_currency_rates_staging
 from tasks.staging.facts import build_facts_staging_group
 from tasks.staging.reference import build_reference_staging_group

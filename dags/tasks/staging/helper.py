@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any
 
-
 from airflow.decorators import task
 
 from de_project.entities.staging_table_config import StagingTableConfig

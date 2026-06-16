@@ -1,8 +1,8 @@
 from pathlib import Path
 from uuid import UUID
 
-from de_project.entities import ENTITIES, RawLoadResultEntity, SourceEntity
 from de_project.dwh.ports import DataWarehouseGateway
+from de_project.entities import ENTITIES, RawLoadResultEntity, SourceEntity
 from de_project.services.raw.load import RawLoadService
 
 

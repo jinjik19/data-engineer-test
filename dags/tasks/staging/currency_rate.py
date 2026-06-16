@@ -1,6 +1,6 @@
 from airflow.decorators import task_group
-
 from tasks.staging.helper import create_staging_table_tasks
+
 from de_project.services.staging.constants import (
     CURRENCY_RATES_CONFIG,
 )

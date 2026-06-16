@@ -1,6 +1,5 @@
 from de_project.entities.staging_table_config import StagingTableConfig
 
-
 PLAYERS_CONFIG = StagingTableConfig(
     entity_name="players",
     table_name="staging.players",
