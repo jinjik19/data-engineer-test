@@ -1,4 +1,4 @@
-WITH lastest_load_batch AS (
+WITH latest_load_batch AS (
     SELECT
         data_month,
         argMax(load_id, loaded_at) AS latest_load_id
@@ -17,7 +17,7 @@ SELECT
     w.currency,
     w.loaded_at AS updated_at
 FROM raw.withdrawals w
-INNER JOIN lastest_load_batch lb
+INNER JOIN latest_load_batch lb
     ON toStartOfMonth(w.withdrawal_date) = lb.data_month
     AND w.load_id = lb.latest_load_id
 ORDER BY w.loaded_at DESC

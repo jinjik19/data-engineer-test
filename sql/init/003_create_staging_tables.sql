@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS staging.providers_map
     provider_name String,
     updated_at DateTime('UTC') DEFAULT now()
 )
-ENGINE MergeTree
+ENGINE = MergeTree
 ORDER BY id;
 
 CREATE TABLE IF NOT EXISTS staging.games_map

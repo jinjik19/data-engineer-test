@@ -1,4 +1,4 @@
-WITH lastest_load_batch AS (
+WITH latest_load_batch AS (
     SELECT
         data_month,
         argMax(load_id, loaded_at) AS latest_load_id
@@ -17,7 +17,7 @@ SELECT
     d.currency,
     d.loaded_at AS updated_at
 FROM raw.deposits d
-INNER JOIN lastest_load_batch lb
+INNER JOIN latest_load_batch lb
     ON toStartOfMonth(d.deposit_date) = lb.data_month 
     AND d.load_id = lb.latest_load_id
 ORDER BY d.loaded_at DESC

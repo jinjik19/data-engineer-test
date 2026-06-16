@@ -26,7 +26,7 @@ def load_raw_entities() -> list[dict]:
 
     results = pipeline.load_all_entities_to_raw(
         data_dir=settings.data_dir,
-        load_id=uuid4() if not load_id else __import__("uuid").UUID(load_id),
+        load_id=load_id,
     )
 
     return [
