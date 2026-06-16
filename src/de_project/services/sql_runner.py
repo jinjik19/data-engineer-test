@@ -1,12 +1,15 @@
+import logging
 from pathlib import Path
 
-from de_project.settings import settings
 from de_project.dwh.ports import DataWarehouseGateway
 from de_project.services.exceptions import (
     DataQualityCheckError,
     SqlFileNotFoundError,
 )
+from de_project.settings import settings
 from de_project.utils.get_clickhouse_gateway import get_clickhouse_gateway
+
+logger = logging.getLogger(__name__)
 
 
 class SqlScriptRunner:
@@ -24,9 +27,13 @@ class SqlScriptRunner:
     def run_check(self, relative_path: str) -> None:
         sql = self._read_sql(relative_path)
         rows = self.warehouse.query_rows(sql)
-        bad_rows = rows[0][0]
 
-        if not rows or bad_rows != 0:
+        if not rows or not rows[0] or rows[0][0] != 0:
+            logger.error(
+                "Проверка качества данных выявила ошибку: проверка='%s', результат=%s",
+                relative_path,
+                rows,
+            )
             raise DataQualityCheckError(
                 f"Проверка качества данных '{relative_path}' вернула ошибку"
             )

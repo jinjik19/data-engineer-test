@@ -1,3 +1,4 @@
+import logging
 from datetime import date, datetime, timezone
 from pathlib import Path
 from uuid import UUID
@@ -5,12 +6,12 @@ from uuid import UUID
 import pandas as pd
 
 from de_project.dwh.ports import DataWarehouseGateway
-from de_project.entities import SourceEntity, RawLoadResultEntity, EntityType
+from de_project.entities import EntityType, RawLoadResultEntity, SourceEntity
 from de_project.services.raw.exceptions import EmptySourceDataError, RawLoadError
 from de_project.services.raw.ingest import RawIngestService
 
-
 REFERENCE_LOADED_DATE = date(1970, 1, 1)
+logger = logging.getLogger(__name__)
 
 
 class RawLoadService:
@@ -56,6 +57,14 @@ class RawLoadService:
             source_file=entity.file_name,
             load_id=load_id,
             loaded_at=loaded_at,
+        )
+
+        logger.info(
+            "Загрузка сырых данных '%s': строки=%d, месяцы=%d, load_id=%s",
+            entity.name,
+            len(prepared_df),
+            len(loaded_months),
+            load_id,
         )
 
         return RawLoadResultEntity(
