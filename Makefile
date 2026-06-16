@@ -10,6 +10,7 @@ help:
 	@echo " make logs - смотреть логи"
 	@echo " make lint - линтер кода"
 	@echo " make format - отформатировать код"
+	@echo " make test - запустить тесты"
 
 .PHONY: build
 build:
@@ -40,3 +41,7 @@ lint:
 format:
 	ruff check . --fix
 	ruff format .
+
+.PHONY: test
+test:
+	pytest
