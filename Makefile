@@ -8,6 +8,8 @@ help:
 	@echo " make down - Остановка сервисов"
 	@echo " make reset - Остановка сервисов и удаление всех volumes"
 	@echo " make logs - смотреть логи"
+	@echo " make lint - линтер кода"
+	@echo " make format - отформатировать код"
 
 .PHONY: build
 build:
@@ -27,3 +29,13 @@ reset:
 .PHONY: logs
 logs:
 	$(COMPOSE) logs -f
+
+.PHONY: lint
+lint:
+	ruff check .
+	ruff format . --check
+
+.PHONY: format
+format:
+	ruff check . --fix
+	ruff format .
