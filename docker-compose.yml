@@ -1,8 +1,33 @@
+x-airflow-common: &airflow-common
+  image: ${AIRFLOW_IMAGE_NAME}
+  build:
+    context: .
+    dockerfile: docker/airflow/Dockerfile
+  environment: &airflow-common-env
+    PYTHONPATH: /opt/airflow/src
+    AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+    AIRFLOW__CORE__EXECUTOR: ${AIRFLOW__CORE__EXECUTOR}
+    AIRFLOW__CORE__LOAD_EXAMPLES: ${AIRFLOW__CORE__LOAD_EXAMPLES}
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: ${AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION}
+    AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: "true"
+    AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW__API_AUTH__JWT_SECRET}
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: "http://airflow-api-server:8080/execution/"
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_POSTGRES_USER}:${AIRFLOW_POSTGRES_PASSWORD}@airflow-postgres:5432/${AIRFLOW_POSTGRES_DB}
+    AIRFLOW_CONN_CLICKHOUSE_DEFAULT: http://${CLICKHOUSE_USER}:${CLICKHOUSE_PASSWORD}@clickhouse:8123/default
+  user: "${AIRFLOW_UID}:0"
+  volumes:
+    - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
+    - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
+    - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
+    - ${AIRFLOW_PROJ_DIR:-.}/src:/opt/airflow/src
+    - ${AIRFLOW_PROJ_DIR:-.}/sql:/opt/airflow/sql:ro
+    - ${AIRFLOW_PROJ_DIR:-.}/data:/opt/airflow/data:ro
+
 services:
   clickhouse:
     image: clickhouse/clickhouse-server:26.3
     container_name: clickhouse_dwh
-    restart: always
+    restart: unless-stopped
     ports:
       - "8123:8123"
       - "9000:9000"
@@ -15,39 +40,19 @@ services:
       - ./sql/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test:
-        ["CMD-SHELL", "wget --spider -q http://127.0.0.1:8123/ping || exit 1"]
+        [
+          "CMD-SHELL",
+          'clickhouse-client --user "$$CLICKHOUSE_USER" --password "$$CLICKHOUSE_PASSWORD" --query "SELECT 1"',
+        ]
       interval: 10s
+      timeout: 5s
       start_period: 5s
       retries: 5
 
-  x-airflow-common: &airflow-common
-    image: ${AIRFLOW_IMAGE_NAME}
-    build:
-      context: .
-      dockerfile: docker/airflow/Dockerfile
-    environment: &airflow-common-env
-      PYTHONPATH: /opt/airflow/src
-      AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
-      AIRFLOW__CORE__EXECUTOR: ${AIRFLOW__CORE__EXECUTOR}
-      AIRFLOW__CORE__LOAD_EXAMPLES: ${AIRFLOW__CORE__LOAD_EXAMPLES}
-      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: ${AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION}
-      AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW__API_AUTH__JWT_SECRET}
-      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: "http://airflow-api-server:8080/execution/"
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_POSTGRES_USER}:${AIRFLOW_POSTGRES_PASSWORD}@airflow-postgres:5432/${AIRFLOW_POSTGRES_DB}
-      AIRFLOW_CONN_CLICKHOUSE_DEFAULT: http://${CLICKHOUSE_USER}:${CLICKHOUSE_PASSWORD}@clickhouse:8123/default
-    user: "${AIRFLOW_UID}:0"
-    volumes:
-      - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
-      - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
-      - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
-      - ${AIRFLOW_PROJ_DIR:-.}/src:/opt/airflow/src
-      - ${AIRFLOW_PROJ_DIR:-.}/sql:/opt/airflow/sql:ro
-      - ${AIRFLOW_PROJ_DIR:-.}/data:/opt/airflow/data:ro
-
   airflow-postgres:
-    image: postgres:16
+    image: postgres:16-alpine
     container_name: airflow_postgres
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${AIRFLOW_POSTGRES_USER}
       POSTGRES_PASSWORD: ${AIRFLOW_POSTGRES_PASSWORD}
@@ -59,8 +64,9 @@ services:
         [
           "CMD-SHELL",
           "pg_isready -U ${AIRFLOW_POSTGRES_USER} -d ${AIRFLOW_POSTGRES_DB}",
-        ]
+      ]
       interval: 10s
+      timeout: 5s
       retries: 5
       start_period: 5s
 
@@ -110,10 +116,12 @@ services:
   airflow-api-server:
     <<: *airflow-common
     container_name: airflow_api_server
-    restart: always
+    restart: unless-stopped
     depends_on:
       airflow-init:
         condition: service_completed_successfully
+      clickhouse:
+        condition: service_healthy
     ports:
       - "8080:8080"
     command: api-server
@@ -128,7 +136,7 @@ services:
   airflow-scheduler:
     <<: *airflow-common
     container_name: airflow_scheduler
-    restart: always
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
       interval: 30s
@@ -138,6 +146,8 @@ services:
     depends_on:
       airflow-init:
         condition: service_completed_successfully
+      clickhouse:
+        condition: service_healthy
     command: scheduler
 
   airflow-dag-processor:
@@ -153,15 +163,18 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
-    restart: always
+    restart: unless-stopped
     depends_on:
       airflow-init:
         condition: service_completed_successfully
+      clickhouse:
+        condition: service_healthy
     command: dag-processor
 
   metabase:
     image: metabase/metabase:v0.60.9.2
     container_name: de-project-metabase
+    restart: unless-stopped
     depends_on:
       clickhouse:
         condition: service_healthy

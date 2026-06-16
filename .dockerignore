@@ -15,6 +15,13 @@ temp/
 
 .ipynb_checkpoints/
 notebooks/
+docs/
+metabase/
+data/
+sql/
+dags/
+src/
+tests/
 
 .git/
 .gitignore
